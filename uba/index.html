@@ -282,7 +282,7 @@
         <div class="btns">
           <a class="btn" id="btn-guia" data-guia href="#guia">Regístrate y recibe tu guía gratis</a>
         </div>
-        <p class="note">Te enviamos la guía a tu correo. Para recibirla necesitamos tus datos: al enviarlos aceptas que Maite Nieves te envíe la guía y información sobre novedades y recursos.</p>
+        <p class="note" id="nota-envio">Te enviamos la guía a tu correo. Para recibirla necesitamos tus datos: al enviarlos aceptas que Maite Nieves te envíe la guía y información sobre novedades y recursos.</p>
       </div>
     </div>
     <figure class="portrait">
@@ -471,7 +471,7 @@
     <button type="button" class="x" id="reg-x" aria-label="Cerrar">&times;</button>
     <div id="reg-form-box">
       <h2 id="reg-t">Regístrate y recibe tu guía gratis</h2>
-      <p class="sub">Déjanos tus datos y te enviamos la guía a tu correo.</p>
+      <p class="sub" id="reg-sub">Déjanos tus datos y te enviamos la guía a tu correo.</p>
       <form id="reg-form" novalidate>
         <label for="f-nombre">Nombre completo
           <input type="text" id="f-nombre" name="nombre" autocomplete="name" required>
@@ -502,7 +502,7 @@
     <div class="ok" id="reg-ok" hidden>
       <h2>¡Listo!</h2>
       <p id="reg-ok-msg"></p>
-      <p>Si no la ves en unos minutos, revisa tu carpeta de spam o correo no deseado.</p>
+      <p id="reg-ok-spam">Si no la ves en unos minutos, revisa tu carpeta de spam o correo no deseado y márcala como &ldquo;No es spam&rdquo;.</p>
       <button type="button" class="btn send" id="reg-ok-close">Cerrar</button>
     </div>
   </div>
@@ -534,6 +534,14 @@
   var ORIGENES = { instagram: "Instagram", linkedin: "LinkedIn", recomendacion: "Me lo recomendaron" };
   var origen = "Feria de Empleo UBA 2026";
   try { var o = new URLSearchParams(location.search).get("o"); if (o && ORIGENES[o]) origen = ORIGENES[o]; } catch (e) {}
+
+  // Antes de esta fecha la guía no se envía: los registros quedan guardados y la guía sale ese día.
+  var FECHA_ENVIO = new Date("2026-11-13T12:00:00-04:00");
+  var programado = new Date() < FECHA_ENVIO;
+  if (programado) {
+    document.getElementById("nota-envio").textContent = "Regístrate y te enviamos la guía a tu correo el viernes 13 de noviembre, después del conversatorio. Al enviar tus datos aceptas que Maite Nieves te envíe la guía y información sobre novedades y recursos.";
+    document.getElementById("reg-sub").textContent = "Déjanos tus datos y te enviamos la guía a tu correo el viernes 13 de noviembre, después del conversatorio.";
+  }
 
   var dlg = document.getElementById("reg");
   var form = document.getElementById("reg-form");
@@ -577,9 +585,14 @@
       .then(function (r) { return r.json(); })
       .then(function (r) {
         if (r && r.ok) {
-          document.getElementById("reg-ok-msg").textContent = r.enviado === false
-            ? "Recibimos tus datos. La guía te llegará a " + correo + " en las próximas horas."
-            : "Te enviamos la guía a " + correo + ".";
+          document.getElementById("reg-ok-msg").textContent = r.programado
+            ? "Quedaste registrado. El viernes 13 de noviembre, después del conversatorio, te enviamos la guía a " + correo + "."
+            : r.enviado === false
+              ? "Recibimos tus datos. La guía te llegará a " + correo + " en las próximas horas."
+              : "Te enviamos la guía a " + correo + ".";
+          document.getElementById("reg-ok-spam").textContent = r.programado
+            ? "Cuando llegue, si no la ves, revisa tu carpeta de spam o correo no deseado y márcala como \"No es spam\"."
+            : "Si no la ves en unos minutos, revisa tu carpeta de spam o correo no deseado y márcala como \"No es spam\".";
           cajaForm.hidden = true; cajaOk.hidden = false;
           form.reset();
         } else {
